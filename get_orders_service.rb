@@ -8,14 +8,14 @@ PASSWORD = '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'
 SHOP_NAME = 'jmhsoft'
 
 module ShopifySync
-  class GetOrderService
-    def self.call(id)
+  class GetOrdersService
+    def self.call
       service = new
-      service.getorder(id)
+      service.getorders
     end
 
-    def getorder(id)
-      ShopifyAPI::Order.find(id)
+    def getorders
+      ShopifyAPI::Order.find(:all)
     end
 
     private
