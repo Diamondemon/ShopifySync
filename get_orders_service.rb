@@ -10,16 +10,18 @@ SHOP_NAME = 'jmhsoft'
 
 module ShopifySync
   class GetOrdersService
-    def self.call
+    def self.call(params = {})
       service = new
-      service.getorders
+      service.getorders(params)
     end
 
     def getorders
-      orders = ShopifyAPI::Order.find(:all)
+      orders = ShopifyAPI::Order.find(:all, params: params)
 
       if orders.empty?
-        OpenStruct.new('success?' => false, 'error_code' => 'Error code 404, there is no pending order.', 'data' => nil)
+        OpenStruct.new('success?' => false,
+                       'error_code' => 'Error code 404, there is no pending order with the specified requirements.',
+                       'data' => nil)
       else
         OpenStruct.new('success?' => true, 'error_code' => nil, 'data' => { orders: orders })
       end

@@ -10,7 +10,7 @@ SHOP_NAME = 'jmhsoft'
 
 module ShopifySync
   class GetOrderService
-    def self.call(id)
+    def self.call(id = :last)
       service = new
       service.getorder(id)
     end
