@@ -2,6 +2,7 @@
 
 require 'awesome_print'
 require 'shopify_api'
+require 'ostruct'
 
 API_KEY = '59beb17eeaad18110aed3aac6aaafd9d'
 PASSWORD = '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'
@@ -15,7 +16,13 @@ module ShopifySync
     end
 
     def getorders
-      ShopifyAPI::Order.find(:all)
+      orders = ShopifyAPI::Order.find(:all)
+
+      if orders.empty?
+        OpenStruct.new('success?' => false, 'error_code' => 'Error code 404, there is no pending order.', 'data' => nil)
+      else
+        OpenStruct.new('success?' => true, 'error_code' => nil, 'data' => { orders: orders })
+      end
     end
 
     private
