@@ -4,3 +4,5 @@ source 'https://rubygems.org'
 gem 'shopify_api'
 
 gem 'awesome_print'
+
+gem 'ostruct'
