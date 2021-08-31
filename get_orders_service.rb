@@ -4,18 +4,14 @@ require 'awesome_print'
 require 'shopify_api'
 require 'ostruct'
 
-API_KEY = '59beb17eeaad18110aed3aac6aaafd9d'
-PASSWORD = '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'
-SHOP_NAME = 'jmhsoft'
-
 module ShopifySync
   class GetOrdersService
     def self.call(params = {})
-      service = new
-      service.getorders(params)
+      service = new(params)
+      service.getorders(params[:params])
     end
 
-    def getorders
+    def getorders(params)
       orders = ShopifyAPI::Order.find(:all, params: params)
 
       if orders.empty?
@@ -29,12 +25,12 @@ module ShopifySync
 
     private
 
-    def initialize
-      initiate_api
+    def initialize(params)
+      initiate_api(params)
     end
 
-    def initiate_api
-      shop_url = "https://#{API_KEY}:#{PASSWORD}@#{SHOP_NAME}.myshopify.com"
+    def initiate_api(login_info)
+      shop_url = "https://#{login_info[:api_key]}:#{login_info[:password]}@#{login_info[:shop_name]}.myshopify.com"
       ShopifyAPI::Base.site = shop_url
       ShopifyAPI::Base.api_version = '2021-10' # find the latest stable api_version here: https://shopify.dev/concepts/about-apis/versioning
     end

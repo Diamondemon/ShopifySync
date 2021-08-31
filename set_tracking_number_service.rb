@@ -4,10 +4,6 @@ require 'awesome_print'
 require 'shopify_api'
 require 'ostruct'
 
-API_KEY = '59beb17eeaad18110aed3aac6aaafd9d'
-PASSWORD = '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'
-SHOP_NAME = 'jmhsoft'
-
 module ShopifySync
   class SetTrackingNumberService
     attr_accessor :order, :fulfillment
@@ -21,13 +17,13 @@ module ShopifySync
 
     def initialize(params)
       @tracking_number = params[:tracking_number]
-      initiate_api
-      getorder(params[:order_id])
+      initiate_api(params)
+      getorder(params)
       fill_fulfillment(params)
     end
 
-    def getorder(order_id)
-      @order = GetOrderService.call(order_id)
+    def getorder(params)
+      @order = GetOrderService.call(params)
       raise @order unless order.success?
     end
 
@@ -41,8 +37,8 @@ module ShopifySync
       @fulfillment.attributes[:line_items] = line_items
     end
 
-    def initiate_api
-      shop_url = "https://#{API_KEY}:#{PASSWORD}@#{SHOP_NAME}.myshopify.com"
+    def initiate_api(login_info)
+      shop_url = "https://#{login_info[:api_key]}:#{login_info[:password]}@#{login_info[:shop_name]}.myshopify.com"
       ShopifyAPI::Base.site = shop_url
       ShopifyAPI::Base.api_version = '2021-10' # find the latest stable api_version here: https://shopify.dev/concepts/about-apis/versioning
     end
