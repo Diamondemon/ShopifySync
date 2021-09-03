@@ -26,7 +26,7 @@ module ShopifySync
     private
 
     def initialize(params)
-      initiate_api(params)
+      initiate_api(params[:login_info])
     end
 
     def initiate_api(login_info)

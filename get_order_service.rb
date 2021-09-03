@@ -7,18 +7,18 @@ require 'ostruct'
 module ShopifySync
   class GetOrderService
     def self.call(params = {})
-      params[:order_id] = :last unless params.has_key?(:order_id)
-      service = new(params)
+      params[:order_id] = :last unless params.key?(:order_id)
+      service = new(params[:login_info])
       service.getorder(params[:order_id])
     end
 
     def getorder(id)
       order = ShopifyAPI::Order.find(id)
     rescue ActiveResource::ResourceNotFound
-      OpenStruct.new('success?' => false, 'error_code' => 'Error code 404, Not Found; check the id of the order.',
+      OpenStruct.new('success?' => false, 'error_code' => 'Error code 404 Not Found; check the id of the order.',
                      'data' => nil)
     rescue ActiveResource::BadRequest
-      OpenStruct.new('success?' => false, 'error_code' => 'Error code 400, Bad request, an order id was expected.',
+      OpenStruct.new('success?' => false, 'error_code' => 'Error code 400 Bad request, an order id was expected.',
                      'data' => nil)
     else
       OpenStruct.new('success?' => true, 'error_code' => nil, 'data' => { order: order })
