@@ -3,6 +3,7 @@
 require 'shopify_api'
 
 module ShopifySync
+  # Service to connect to the API
   class ConnectionService
     def self.call(login_info)
       shop_url = "https://#{login_info[:api_key]}:#{login_info[:password]}@#{login_info[:shop_name]}.myshopify.com"

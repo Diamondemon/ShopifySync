@@ -6,6 +6,7 @@ require './connection_service'
 require './exceptions'
 
 module ShopifySync
+  # Service to fulfill orders in the shop
   class SetTrackingNumberService
     attr_accessor :order, :fulfillment, :feedback
 
@@ -76,7 +77,7 @@ module ShopifySync
     end
 
     def verify_fulfillment
-      if @fulfillment.errors.nil?
+      if @fulfillment.errors.empty?
         @feedback = OpenStruct.new('success?' => true, 'error_code' => nil, 'data' => { fulfillment: @fulfillment })
       elsif @fulfillment.errors.errors[0].type.scan('already fulfilled').empty?
         @feedback = OpenStruct.new('success?' => false, 'error_code' => 'Unhandled error, see fulfillment object',

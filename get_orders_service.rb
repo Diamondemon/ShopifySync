@@ -6,6 +6,7 @@ require './connection_service'
 require './exceptions'
 
 module ShopifySync
+  # Service to retrieve all pending orders
   class GetOrdersService
     attr_accessor :feedback
 

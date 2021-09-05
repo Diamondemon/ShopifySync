@@ -1,16 +1,21 @@
+# frozen_string_literal: true
+
 require 'awesome_print'
-require 'shopify_api'
+require './shopify_sync'
 
-API_KEY = ''
-PASSWORD = ''
-SHOP_NAME = ''
+API_KEY = '59beb17eeaad18110aed3aac6aaafd9d' # Wrong => Error 403
+PASSWORD = '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' # Wrong => Error 401
+SHOP_NAME = 'jmhsoft' # Wrong => Error 404
 
-shop_url = "https://#{API_KEY}:#{PASSWORD}@#{SHOP_NAME}.myshopify.com"
-ShopifyAPI::Base.site = shop_url
-ShopifyAPI::Base.api_version = '2021-10' # find the latest stable api_version here: https://shopify.dev/concepts/about-apis/versioning
+params = { login_info: { api_key: API_KEY, password: PASSWORD, shop_name: SHOP_NAME }, params: { limit: 50 } }
 
-shop = ShopifyAPI::Shop.current
+ap ShopifySync::GetOrdersService.call(params)
 
-products = ShopifyAPI::Product.find(:all, params: { limit: 50 })
+# ap ShopifySync::GetOrderService.call(params.merge({ order_id: 4_118_688_399_511 })).data[:order].attributes
 
-ap products
+=begin
+ap ShopifySync::SetTrackingNumberService.call(params.merge({ order_id: 4_110_797_930_647,
+                                                             tracking_info: { tracking_number: 4,
+                                                                              tracking_url: 'https://laposte.net/',
+                                                                              tracking_company: 'La Poste' } }))
+=end

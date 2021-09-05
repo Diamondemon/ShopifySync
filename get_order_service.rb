@@ -6,6 +6,7 @@ require './connection_service'
 require './exceptions'
 
 module ShopifySync
+  # Service to retrieve the specified order
   class GetOrderService
     attr_accessor :feedback
 
