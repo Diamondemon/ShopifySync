@@ -1,38 +1,63 @@
 # frozen_string_literal: true
 
-require 'awesome_print'
 require 'shopify_api'
 require 'ostruct'
+require './connection_service'
+require './exceptions'
 
 module ShopifySync
   class GetOrdersService
+    attr_accessor :feedback
+
     def self.call(params = {})
       service = new(params)
-      service.getorders(params[:params])
-    end
-
-    def getorders(params)
-      orders = ShopifyAPI::Order.find(:all, params: params)
-
-      if orders.empty?
-        OpenStruct.new('success?' => false,
-                       'error_code' => 'Error code 404, there is no pending order with the specified requirements.',
-                       'data' => nil)
-      else
-        OpenStruct.new('success?' => true, 'error_code' => nil, 'data' => { orders: orders })
-      end
+      service.feedback
     end
 
     private
 
     def initialize(params)
-      initiate_api(params[:login_info])
+      ConnectionService.call(params[:login_info])
+    rescue ActiveResource::UnauthorizedAccess => e
+      @feedback = OpenStruct.new('success?' => false, 'error_code' => 'Error code 401, Invalid credentials',
+                                 'data' => { error: e })
+    else
+      getorders(params[:params])
     end
 
-    def initiate_api(login_info)
-      shop_url = "https://#{login_info[:api_key]}:#{login_info[:password]}@#{login_info[:shop_name]}.myshopify.com"
-      ShopifyAPI::Base.site = shop_url
-      ShopifyAPI::Base.api_version = '2021-10' # find the latest stable api_version here: https://shopify.dev/concepts/about-apis/versioning
+    def getorders(params)
+      orders = ShopifyAPI::Order.find(:all, params: params)
+    rescue ActiveResource::ClientError => e
+      error_code = handle_error(e)
+      @feedback = OpenStruct.new('success?' => false, 'error_code' => error_code,
+                                 'data' => { error: e })
+    else
+      verify_orders(orders)
+    end
+
+    def verify_orders(orders)
+      if orders.empty?
+        error_code = 'Error code 404, there is no pending order with the specified requirements.'
+        @feedback = OpenStruct.new('success?' => false,
+                                   'error_code' => error_code,
+                                   'data' => nil)
+      else
+        @feedback = OpenStruct.new('success?' => true, 'error_code' => nil, 'data' => { orders: orders })
+      end
+    end
+
+    def handle_error(err)
+      if err.instance_of?(ActiveResource::ResourceNotFound)
+        'Error code 404 Not Found; check the id of the order.'
+      elsif err.instance_of?(ActiveResource::BadRequest)
+        'Error code 400 Bad request, an order id was expected.'
+      elsif err.instance_of?(ActiveResource::UnauthorizedAccess)
+        'Error code 401, Invalid credentials'
+      elsif err.instance_of?(ActiveResource::ForbiddenAccess)
+        'Error code 403, Invalid API Key'
+      else
+        'Unhandled error'
+      end
     end
   end
 end

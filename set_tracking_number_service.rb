@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
-require 'awesome_print'
 require 'shopify_api'
 require 'ostruct'
+require './connection_service'
+require './exceptions'
 
 module ShopifySync
   class SetTrackingNumberService
@@ -16,11 +17,14 @@ module ShopifySync
     private
 
     def initialize(params)
-      @tracking_number = params[:tracking_number]
-      initiate_api(params[:login_info])
+      ConnectionService.call(params[:login_info])
+      fulfill(params)
+    end
+
+    def fulfill(params)
       getorder(params)
-    rescue TypeError
-      @feedback = OpenStruct.new('success?' => false, 'error_code' => 'Error on order.', 'data' => {order: @order})
+    rescue SyncOrderError
+      @feedback = OpenStruct.new('success?' => false, 'error_code' => 'Error on order.', 'data' => { order: @order })
     else
       fill_fulfillment(params[:tracking_info])
       save_fulfillment
@@ -28,13 +32,14 @@ module ShopifySync
 
     def getorder(params)
       @order = GetOrderService.call({ login_info: params[:login_info], order_id: params[:order_id] })
+      raise SyncOrderError unless @order.success?
+
       @order_items = @order.data[:order].line_items
       @line_items = []
       @order_items.each do |item|
         @line_items.append({ id: item.id, product_id: item.product_id,
                              variant_id: item.variant_id, quantity: item.fulfillable_quantity })
       end
-      raise TypeError unless order.success?
     end
 
     def find_location
@@ -81,12 +86,6 @@ module ShopifySync
         @feedback = OpenStruct.new('success?' => false, 'error_code' => error_code,
                                    'data' => { fulfillment: @fulfillment })
       end
-    end
-
-    def initiate_api(login_info)
-      shop_url = "https://#{login_info[:api_key]}:#{login_info[:password]}@#{login_info[:shop_name]}.myshopify.com"
-      ShopifyAPI::Base.site = shop_url
-      ShopifyAPI::Base.api_version = '2021-10' # find the latest stable api_version here: https://shopify.dev/concepts/about-apis/versioning
     end
   end
 end
