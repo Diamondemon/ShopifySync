@@ -8,33 +8,48 @@ require './exceptions'
 module ShopifySync
   # Service to fulfill orders in the shop
   class SetTrackingNumberService
-    attr_accessor :order, :fulfillment, :feedback
+    attr_accessor :order, :fulfillment, :tracking_info, :shopify_order_id, :shopify_login_info, :line_items
 
     def self.call(params)
-      service = new(params)
-      service.feedback
+      new(params).call
+    end
+
+    def call
+      pull_order_from_shopify
+    rescue SyncOrderError
+      OpenStruct.new('success?' => false, 'error_code' => '4XX', 'error_message' => 'Error on order.',
+                     'data' => { order: order })
+    rescue AlreadyFulfilledError
+      OpenStruct.new('success?' => false, 'error_code' => '001', 'error_message' => 'Order is already fulfilled.',
+                     'data' => { order: order })
+    else
+      fill_fulfillment
+      save_fulfillment
     end
 
     private
 
     def initialize(params)
-      ConnectionService.call(params[:login_info])
-      fulfill(params)
+      @tracking_info = params[:tracking_info]
+      @shopify_login_info = params[:login_info]
+      @shopify_order_id = params[:order_id]
+      initiate_shopify_api
     end
 
-    def fulfill(params)
-      getorder(params)
-    rescue SyncOrderError
-      @feedback = OpenStruct.new('success?' => false, 'error_code' => 'Error on order.', 'data' => { order: @order })
-    else
-      fill_fulfillment(params[:tracking_info])
-      save_fulfillment
+    def initiate_shopify_api
+      ConnectionService.call(shopify_login_info)
     end
 
-    def getorder(params)
-      @order = GetOrderService.call({ login_info: params[:login_info], order_id: params[:order_id] })
+    def pull_order_from_shopify
+      @order = GetOrderService.call({ login_info: shopify_login_info, order_id: shopify_order_id })
       raise SyncOrderError unless @order.success?
 
+      raise AlreadyFulfilledError if @order.data[:order].fulfillment_status == 'fulfilled'
+
+      fill_line_items
+    end
+
+    def fill_line_items
       @order_items = @order.data[:order].line_items
       @line_items = []
       @order_items.each do |item|
@@ -56,7 +71,7 @@ module ShopifySync
       variant_ids
     end
 
-    def fill_fulfillment(tracking_info)
+    def fill_fulfillment
       @fulfillment = ShopifyAPI::Fulfillment.new
       @fulfillment.attributes.merge!({ location_id: find_location,
                                        tracking_number: tracking_info[:tracking_number],
@@ -71,22 +86,9 @@ module ShopifySync
     rescue ActiveResource::ResourceNotFound
       error_code = 'Error code 404 Not Found; check the id of the order,'
       error_code += ' verify that no variant was removed, or no location vas moved.'
-      @feedback = OpenStruct.new('success?' => false, 'error_code' => error_code, 'data' => nil)
+      OpenStruct.new('success?' => false, 'error_code' => error_code, 'data' => nil)
     else
-      verify_fulfillment
-    end
-
-    def verify_fulfillment
-      if @fulfillment.errors.empty?
-        @feedback = OpenStruct.new('success?' => true, 'error_code' => nil, 'data' => { fulfillment: @fulfillment })
-      elsif @fulfillment.errors.errors[0].type.scan('already fulfilled').empty?
-        @feedback = OpenStruct.new('success?' => false, 'error_code' => 'Unhandled error, see fulfillment object',
-                                   'data' => { fulfillment: @fulfillment })
-      else
-        error_code = 'Error 422, Unprocessable, items are already fulfilled'
-        @feedback = OpenStruct.new('success?' => false, 'error_code' => error_code,
-                                   'data' => { fulfillment: @fulfillment })
-      end
+      OpenStruct.new('success?' => true, 'error_code' => nil, 'data' => { fulfillment: @fulfillment })
     end
   end
 end
