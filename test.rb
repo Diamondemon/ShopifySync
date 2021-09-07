@@ -9,13 +9,20 @@ SHOP_NAME = 'jmhsoft' # Wrong => Error 404
 
 params = { login_info: { api_key: API_KEY, password: PASSWORD, shop_name: SHOP_NAME }, params: { limit: 50 } }
 
-ap ShopifySync::GetOrdersService.call(params).data[:orders][0].id
+# get all order ids
+id_list = []
+ShopifySync::GetOrdersService.call(params).data[:orders].each { |order| id_list.append(order.id) }
 
-ap ShopifySync::GetOrderService.call(params.merge({ order_id: 4128904315031 })).data[:order]
+# display the first order found
+ap ShopifySync::GetOrderService.call(params.merge({ order_id: id_list[0] }))
 
-# =begin
-ap ShopifySync::SetTrackingNumberService.call(params.merge({ order_id: 4128904315031,
-                                                             tracking_info: { tracking_number: 4,
-                                                                              tracking_url: 'https://laposte.net/',
-                                                                              tracking_company: 'La Poste' } }))
-# =end
+# fulfill all pending orders
+tracking_number = 1
+
+id_list.each do |id|
+  ap ShopifySync::SetTrackingNumberService.call(params.merge({ order_id: id,
+                                                               tracking_info: { tracking_number: tracking_number,
+                                                                                tracking_url: 'https://laposte.net/',
+                                                                                tracking_company: 'La Poste' } }))
+  tracking_number += 1
+end
