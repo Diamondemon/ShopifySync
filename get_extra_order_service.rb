@@ -1,13 +1,19 @@
 # frozen_string_literal: true
 
+require 'shopify_api'
+require 'ostruct'
+require './connection_service'
+require 'awesome_print'
+
 module ShopifySync
   # Service to retrieve the specified order, its line items and the locations
   class GetExtraOrderService < GetOrderService
-    attr_accessor :locations
+    attr_accessor :locations, :line_items
 
     def call
       pull_order_from_shopify
       fill_line_items
+      retrieve_variants_and_locations
     rescue ActiveResource::ClientError => e
       error_details = handle_error(e)
       OpenStruct.new('success?' => false, 'error_code' => error_details[:code],
@@ -21,7 +27,7 @@ module ShopifySync
     private
 
     def fill_line_items
-      @order_items = shopify_order.data[:order].line_items
+      @order_items = shopify_order.line_items
       @line_items = []
       @order_items.each do |item|
         @line_items.append({ id: item.id, product_id: item.product_id,

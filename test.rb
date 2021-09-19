@@ -14,10 +14,10 @@ id_list = []
 ShopifySync::GetOrdersService.call(params).data[:orders].each { |order| id_list.append(order.id) }
 
 # display the first order found
-ap ShopifySync::GetOrderService.call(params.merge({ order_id: id_list[0] }))
+ap ShopifySync::GetExtraOrderService.call(params.merge({ order_id: id_list[0] }))
 
 # fulfill all pending orders
-tracking_number = 1
+=begin tracking_number = 1
 
 id_list.each do |id|
   ap ShopifySync::SetTrackingNumberService.call(params.merge({ order_id: id,
@@ -26,3 +26,4 @@ id_list.each do |id|
                                                                                 tracking_company: 'La Poste' } }))
   tracking_number += 1
 end
+=end
