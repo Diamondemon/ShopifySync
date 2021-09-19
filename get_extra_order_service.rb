@@ -20,7 +20,6 @@ module ShopifySync
                      'error_message' => error_details[:message], 'data' => { error: e })
     else
       OpenStruct.new('success?' => true, 'error_code' => nil, 'data' => { order: shopify_order,
-                                                                          line_items: line_items,
                                                                           locations: locations })
     end
 
@@ -36,16 +35,14 @@ module ShopifySync
     end
 
     def retrieve_variants_and_locations
-      @locations = []
+      @locations = {}
       @line_items.each do |item|
         variant = ShopifyAPI::Variant.find(item[:variant_id])
         invent_lvls = ShopifyAPI::InventoryLevel.find(:all, params: { inventory_item_ids: variant.inventory_item_id })
         invent_lvls.each do |invent_lvl|
-          @locations << invent_lvl.attributes[:location_id]
-          item[:location_id] = invent_lvl.attributes[:location_id]
+          (locations[invent_lvl.attributes[:location_id]] ||= []) << item
         end
       end
-      @locations.sort!.uniq!
     end
   end
 end

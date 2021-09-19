@@ -17,13 +17,13 @@ ShopifySync::GetOrdersService.call(params).data[:orders].each { |order| id_list.
 ap ShopifySync::GetExtraOrderService.call(params.merge({ order_id: id_list[0] }))
 
 # fulfill all pending orders
-=begin tracking_number = 1
+tracking_number = 1
 
 id_list.each do |id|
   ap ShopifySync::SetTrackingNumberService.call(params.merge({ order_id: id,
+                                                               location_ids: nil,
                                                                tracking_info: { tracking_number: tracking_number,
                                                                                 tracking_url: 'https://laposte.net/',
                                                                                 tracking_company: 'La Poste' } }))
   tracking_number += 1
 end
-=end
