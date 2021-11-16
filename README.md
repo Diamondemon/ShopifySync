@@ -1,10 +1,10 @@
 # Shopify Sync
 
-Projet temporaire pour le développement externalisé des outils de synchronisation avec la plate-forme Shopify.
+Projet temporaire pour le développement externalisé d'outils de synchronisation avec la plate-forme Shopify.
 
 Pour essayer la gem:
 
-* Créez une application privée sur votre compte développeur Shopify ([voir Wiki](https://gitlab.myflyingbox.com/lce/shopify-sync/-/wikis/ShopifySync-Integration)).
+* Créez une application privée sur votre compte développeur Shopify ([voir Wiki](https://github.com/Diamondemon/ShopifySync/wiki/ShopifySync-Integration)).
 
 * Remplacez les informations de connexion dans le fichier test.rb par les vôtres.
 
